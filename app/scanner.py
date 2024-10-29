@@ -14,7 +14,7 @@ class Scanner:
         self.source: str = source
         self.start: int = 0
         self.current: int = 0
-        self.line: int = 0
+        self.line: int = 1
         self.tokens: list[tokens.Token] = []
         self.lexical_errors: list[str] = []
 

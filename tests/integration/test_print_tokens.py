@@ -38,6 +38,6 @@ class TestPrint:
             + "EOF  null"
         )
         assert lexical_errors == [
-            "[line 0] Error: Unexpected character: $",
-            "[line 0] Error: Unexpected character: #",
+            "[line 1] Error: Unexpected character: $",
+            "[line 1] Error: Unexpected character: #",
         ]
