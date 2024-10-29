@@ -32,6 +32,8 @@ def main() -> None:
         tokens, lexical_errors = tokenizer.scan(file_contents)
         tokenizer.print_lexical_errors(lexical_errors)
         tokenizer.print_tokens(tokens)
+        if lexical_errors:
+            sys.exit(65)
     else:
         print("EOF  null")
 
