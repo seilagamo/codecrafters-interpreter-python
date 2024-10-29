@@ -4,6 +4,8 @@ Collection of functions to manage the tokens returned by the scan.
 
 """
 
+import sys
+
 from . import scanner, tokens
 
 
@@ -17,7 +19,16 @@ def print_tokens(toks: list[tokens.Token]) -> None:
     print(tokens_to_string(toks))
 
 
-def scan(contents: str) -> list[tokens.Token]:
-    """Scan a string."""
+def print_lexical_errors(errors: list[str]) -> None:
+    """Print a list of lexical errors"""
+    for error in errors:
+        print(error, file=sys.stderr)
+
+
+def scan(contents: str) -> tuple[list[tokens.Token], list[str]]:
+    """Scan a string.
+
+    Return a tuple containing the list of tokens and
+    the list of lexical errors"""
     sc = scanner.Scanner(contents)
-    return sc.scan_tokens()
+    return sc.scan_tokens(), sc.lexical_errors

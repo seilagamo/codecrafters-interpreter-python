@@ -29,7 +29,8 @@ def main() -> None:
 
     # Uncomment this block to pass the first stage
     if file_contents:
-        tokens = tokenizer.scan(file_contents)
+        tokens, lexical_errors = tokenizer.scan(file_contents)
+        tokenizer.print_lexical_errors(lexical_errors)
         tokenizer.print_tokens(tokens)
     else:
         print("EOF  null")

@@ -16,6 +16,7 @@ class Scanner:
         self.current: int = 0
         self.line: int = 0
         self.tokens: list[tokens.Token] = []
+        self.lexical_errors: list[str] = []
 
     def is_at_end(self) -> bool:
         """Check if we are at the end of the source."""
@@ -57,7 +58,7 @@ class Scanner:
             case "*":
                 self.add_token(tokens.TokenType.STAR)
             case _:
-                raise ValueError(f"Line: {self.line}: Unexpected character.")
+                self.add_lexical_error(c)
 
     def advance(self) -> str:
         """Advance a character."""
@@ -71,3 +72,9 @@ class Scanner:
         """Add a token to the token list."""
         text: str = self.source[self.start : self.current]
         self.tokens.append(tokens.Token(token_type, text, literal, self.line))
+
+    def add_lexical_error(self, c: str) -> None:
+        """Add an error to the lexical error list."""
+        self.lexical_errors.append(
+            f"[line {self.line}] Error: Unexpected character: {c}"
+        )
