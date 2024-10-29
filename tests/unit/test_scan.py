@@ -39,3 +39,22 @@ class TestScan:
         sc = scanner.Scanner("{{}}")
         t = sc.scan_tokens()
         assert t == expected
+
+    def test_other_single_characters(self) -> None:
+        """test_other_single_characters"""
+        expected = [
+            tokens.Token(tokens.TokenType.LEFT_PAREN, "(", None, 0),
+            tokens.Token(tokens.TokenType.LEFT_BRACE, "{", None, 0),
+            tokens.Token(tokens.TokenType.STAR, "*", None, 0),
+            tokens.Token(tokens.TokenType.DOT, ".", None, 0),
+            tokens.Token(tokens.TokenType.COMMA, ",", None, 0),
+            tokens.Token(tokens.TokenType.PLUS, "+", None, 0),
+            tokens.Token(tokens.TokenType.STAR, "*", None, 0),
+            tokens.Token(tokens.TokenType.RIGHT_BRACE, "}", None, 0),
+            tokens.Token(tokens.TokenType.RIGHT_PAREN, ")", None, 0),
+            tokens.Token(tokens.TokenType.EOF, "", None, 0),
+        ]
+
+        sc = scanner.Scanner("({*.,+*})")
+        t = sc.scan_tokens()
+        assert t == expected
