@@ -57,6 +57,30 @@ class Scanner:
                 self.add_token(tokens.TokenType.SEMICOLON)
             case "*":
                 self.add_token(tokens.TokenType.STAR)
+            case "!":
+                self.add_token(
+                    tokens.TokenType.BANG_EQUAL
+                    if self.match("=")
+                    else tokens.TokenType.BANG
+                )
+            case "=":
+                self.add_token(
+                    tokens.TokenType.EQUAL_EQUAL
+                    if self.match("=")
+                    else tokens.TokenType.EQUAL
+                )
+            case "<":
+                self.add_token(
+                    tokens.TokenType.LESS_EQUAL
+                    if self.match("=")
+                    else tokens.TokenType.LESS
+                )
+            case ">":
+                self.add_token(
+                    tokens.TokenType.GREATER_EQUAL
+                    if self.match("=")
+                    else tokens.TokenType.GREATER
+                )
             case _:
                 self.add_lexical_error(c)
 
@@ -65,6 +89,19 @@ class Scanner:
         c = self.source[self.current]
         self.current += 1
         return c
+
+    def match(self, expected: str) -> bool:
+        """
+        It's like a conditional advance(). We only consume the current character
+          if it's what we're looking for.
+        """
+        if self.is_at_end():
+            return False
+        if self.source[self.current] != expected:
+            return False
+
+        self.current += 1
+        return True
 
     def add_token(
         self, token_type: tokens.TokenType, literal: object = None
