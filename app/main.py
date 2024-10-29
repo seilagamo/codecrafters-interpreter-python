@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Lox interpreter
 
 This is a interpreted based on the book Crafting Interpreters.
