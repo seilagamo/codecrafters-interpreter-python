@@ -89,3 +89,23 @@ class Token:
     def __hash__(self) -> int:
         # necessary for instances to behave sanely in dicts and sets.
         return hash((self.type, self.lexeme, self.literal, self.line))
+
+
+KEYWORDS: dict[str, TokenType] = {
+    "and": TokenType.AND,
+    "class": TokenType.CLASS,
+    "else": TokenType.ELSE,
+    "false": TokenType.FALSE,
+    "for": TokenType.FOR,
+    "fun": TokenType.FUN,
+    "if": TokenType.IF,
+    "nil": TokenType.NIL,
+    "or": TokenType.OR,
+    "print": TokenType.PRINT,
+    "return": TokenType.RETURN,
+    "super": TokenType.SUPER,
+    "this": TokenType.THIS,
+    "true": TokenType.TRUE,
+    "var": TokenType.VAR,
+    "while": TokenType.WHILE,
+}

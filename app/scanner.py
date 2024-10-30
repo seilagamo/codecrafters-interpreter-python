@@ -192,7 +192,12 @@ class Scanner:
         """Consume an identifier."""
         while isalphanumeric(self.peek()):
             self.advance()
-        self.add_token(tokens.TokenType.IDENTIFIER)
+
+        text = self.source[self.start : self.current]
+        token_type = tokens.KEYWORDS.get(text)
+        if not token_type:
+            token_type = tokens.TokenType.IDENTIFIER
+        self.add_token(token_type)
 
 
 def isalpha(c: str) -> bool:
