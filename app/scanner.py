@@ -96,6 +96,8 @@ class Scanner:
                 self.string()
             case c if c.isdigit():
                 self.number()
+            case c if isalpha(c):
+                self.identifier()
             case _:
                 self.add_lexical_error(f"Unexpected character: {c}")
 
@@ -185,3 +187,19 @@ class Scanner:
             tokens.TokenType.NUMBER,
             float(self.source[self.start : self.current]),
         )
+
+    def identifier(self) -> None:
+        """Consume an identifier."""
+        while isalphanumeric(self.peek()):
+            self.advance()
+        self.add_token(tokens.TokenType.IDENTIFIER)
+
+
+def isalpha(c: str) -> bool:
+    """Check if c is alphabetic or _"""
+    return c.isalpha() or c == "_"
+
+
+def isalphanumeric(c: str) -> bool:
+    """Check if c is alphanumeric or _"""
+    return isalpha(c) or c.isdigit()
