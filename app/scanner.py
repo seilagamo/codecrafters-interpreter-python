@@ -88,6 +88,10 @@ class Scanner:
                         self.advance()
                 else:
                     self.add_token(tokens.TokenType.SLASH)
+            case " " | "\r" | "\t":
+                pass
+            case "\n":
+                self.line += 1
             case _:
                 self.add_lexical_error(c)
 

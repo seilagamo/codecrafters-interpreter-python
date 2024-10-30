@@ -44,13 +44,11 @@ max-line-length = 80
 [tool.isort]
 profile = "black"
 
-[tool.pytest.ini.options]
+[tool.pytest.ini_options]
 testpaths = [
     "tests"
 ]
-addopts = [
-    "--cov"
-]
+addopts = "--cov"
 python_files = [
     "test*.py"
 ]
