@@ -92,8 +92,10 @@ class Scanner:
                 pass
             case "\n":
                 self.line += 1
+            case '"':
+                self.string()
             case _:
-                self.add_lexical_error(c)
+                self.add_lexical_error(f"Unexpected character: {c}")
 
     def advance(self) -> str:
         """Advance a character."""
@@ -127,8 +129,28 @@ class Scanner:
         text: str = self.source[self.start : self.current]
         self.tokens.append(tokens.Token(token_type, text, literal, self.line))
 
-    def add_lexical_error(self, c: str) -> None:
+    def add_lexical_error(self, msg: str) -> None:
         """Add an error to the lexical error list."""
-        self.lexical_errors.append(
-            f"[line {self.line}] Error: Unexpected character: {c}"
-        )
+        self.lexical_errors.append(f"[line {self.line}] Error: {msg}")
+
+    def string(self) -> None:
+        """
+        We consume characters until we hit the " that ends the string. We also
+        gracefully handle running out of input before the string is closed and
+        report an error for that.
+        """
+        while self.peek() != '"' and not self.is_at_end():
+            if self.peek() == "\n":
+                self.line += 1
+            self.advance()
+
+        if self.is_at_end():
+            self.add_lexical_error("Unterminated string.")
+            return
+
+        # The closing ".
+        self.advance()
+
+        # Trim the surrounding quotes.
+        value = self.source[self.start + 1 : self.current - 1]
+        self.add_token(tokens.TokenType.STRING, value)
