@@ -70,9 +70,15 @@ class Token:
         self.line = line
 
     def __str__(self) -> str:
+
+        literal = self.literal
+
+        if literal == 0:
+            literal = "0.0"
+
         return (
             f"{self.type.name} {self.lexeme} "
-            f"{self.literal if self.literal else "null"}"
+            f"{literal if literal else "null"}"
         )
 
     def __eq__(self, other: object) -> bool:
