@@ -81,6 +81,13 @@ class Scanner:
                     if self.match("=")
                     else tokens.TokenType.GREATER
                 )
+            case "/":
+                if self.match("/"):
+                    # A comment goes until the end of the line.
+                    while self.peek() != "\n" and not self.is_at_end():
+                        self.advance()
+                else:
+                    self.add_token(tokens.TokenType.SLASH)
             case _:
                 self.add_lexical_error(c)
 
@@ -102,6 +109,12 @@ class Scanner:
 
         self.current += 1
         return True
+
+    def peek(self) -> str:
+        """Advance but doesn't consume the character."""
+        if self.is_at_end():
+            return "\0"
+        return self.source[self.current]
 
     def add_token(
         self, token_type: tokens.TokenType, literal: object = None
