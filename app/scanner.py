@@ -94,6 +94,8 @@ class Scanner:
                 self.line += 1
             case '"':
                 self.string()
+            case c if c.isdigit():
+                self.number()
             case _:
                 self.add_lexical_error(f"Unexpected character: {c}")
 
@@ -121,6 +123,12 @@ class Scanner:
         if self.is_at_end():
             return "\0"
         return self.source[self.current]
+
+    def peek_next(self) -> str:
+        """Lookahead"""
+        if self.current + 1 >= len(self.source):
+            return "\0"
+        return self.source[self.current + 1]
 
     def add_token(
         self, token_type: tokens.TokenType, literal: object = None
@@ -154,3 +162,26 @@ class Scanner:
         # Trim the surrounding quotes.
         value = self.source[self.start + 1 : self.current - 1]
         self.add_token(tokens.TokenType.STRING, value)
+
+    def number(self) -> None:
+        """
+        We consume as many digits as we find for the integer part of the
+        literal. Then we look for a fractional part, which is a decimal
+        point (.) followed by at least one digit. If we do have a fractional
+        part, again, we consume as many digits as we can find.
+        """
+        while self.peek().isdigit():
+            self.advance()
+
+        # Look for a fractional part.
+        if self.peek() == "." and self.peek_next().isdigit():
+            #  Consume the "."
+            self.advance()
+
+            while self.peek().isdigit():
+                self.advance()
+
+        self.add_token(
+            tokens.TokenType.NUMBER,
+            float(self.source[self.start : self.current]),
+        )
