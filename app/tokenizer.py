@@ -9,6 +9,18 @@ import sys
 from . import scanner, tokens
 
 
+def tokenize(content: str) -> None:
+    """Tokenize and print the content."""
+    if content:
+        toks, lexical_errors = scan(content)
+        print_lexical_errors(lexical_errors)
+        print_tokens(toks)
+        if lexical_errors:
+            sys.exit(65)
+    else:
+        print("EOF  null")
+
+
 def tokens_to_string(toks: list[tokens.Token]) -> str:
     """Transform a list of tokens in a string."""
     return "\n".join([str(x) for x in toks])
