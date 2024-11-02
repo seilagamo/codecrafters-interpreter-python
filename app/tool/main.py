@@ -12,23 +12,27 @@ def main() -> None:
         sys.exit(64)
 
     command = sys.argv[1]
-    output_dir = sys.argv[2] if len(sys.argv) == 3 else "ast"
+    output_dir = sys.argv[2] if len(sys.argv) == 3 else "gen"
 
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
+    # Creates the init file
+    with open(Path(output_dir) / "__init__.py", "w", encoding="utf-8"):
+        pass
+
     match command:
         case "generate_ast":
-            base_name = "Expr"
+            basename = "Expr"
             ast = define_ast(
-                base_name,
+                basename,
                 [
-                    "Binary   : Expr left, Token operator, Expr right",
-                    "Grouping : Expr expression",
-                    "Literal  : Object value",
-                    "Unary    : Token operator, Expr right",
+                    "Binary   : Expr[T] left, Token operator, Expr[T] right",
+                    "Grouping : Expr[T] expression",
+                    "Literal  : object value",
+                    "Unary    : Token operator, Expr[T] right",
                 ],
             )
-            path = Path(output_dir) / f"{base_name.lower()}.py"
+            path = Path(output_dir) / f"{basename.lower()}.py"
             with open(path, "w", encoding="utf-8") as file:
                 file.writelines(ast)
 
@@ -38,32 +42,41 @@ def main() -> None:
             sys.exit(1)
 
 
-def define_ast(base_name: str, types: list[str]) -> list[str]:
+def define_ast(basename: str, types: list[str]) -> list[str]:
     """Define the ast."""
     ast = [
         "import abc\n",
-        "\n",
-        f"class {base_name}(abc.ABC):\n",
-        "    pass\n",
+        "from typing import Any\n",
+        "from app.tokens import Token\n",
         "\n",
     ]
-
-    ast.extend(define_visitor())
+    ast.extend(define_visitor(basename, types))
+    ast.extend(
+        [
+            f"class {basename}[T](abc.ABC):\n",
+            "    @abc.abstractmethod\n",
+            "    def accept(self, visitor: Visitor[T]) -> T:\n",
+            "        pass\n\n",
+        ]
+    )
 
     # The AST classes.
     for _type in types:
         classname = _type.split(":")[0].strip()
         fields = _type.split(":")[1].strip()
-        ast.extend(define_type(base_name, classname, fields))
+        ast.extend(define_type(basename, classname, fields))
     return ast
 
 
-def define_type(base_name: str, classname: str, fieldlist: str) -> list[str]:
+def define_type(basename: str, classname: str, fieldlist: str) -> list[str]:
     """Define the types."""
-    fieldnames = [field.split(" ")[1] for field in fieldlist.split(", ")]
+    fieldnames = [
+        f"{field.split(" ")[1]}: {field.split(" ")[0]}"
+        for field in fieldlist.split(", ")
+    ]
     _type = [
-        f"class {classname}({base_name}):\n",
-        f"    def __init__(self, {", ".join(fieldnames)}):\n",
+        f"class {classname}{basename}[T]({basename}[T]):\n",
+        f"    def __init__(self, {", ".join(fieldnames)}) -> None:\n",
     ]
 
     fields = fieldlist.split(", ")
@@ -71,21 +84,63 @@ def define_type(base_name: str, classname: str, fieldlist: str) -> list[str]:
         name = field.split(" ")[1]
         _type.append(f"        self.{name} = {name}\n")
     _type.append("\n")
+
+    _type.extend(
+        [
+            "    def accept(self, visitor: Visitor[T]) -> T:\n",
+            "        return visitor.visit_",
+            f"{classname.lower()}_{basename.lower()}(self)\n\n",
+        ]
+    )
+
     return _type
 
 
-def define_visitor() -> list[str]:
+def define_visitor(basename: str, types: list[str]) -> list[str]:
     """Generate the abstract class Visitor."""
-    return [
-        "class Visitor(metaclass=abc.ABCMeta):\n",
+
+    # visitors
+    methods: list[str] = [
+        "class Visitor[T](metaclass=abc.ABCMeta):\n",
         "    @classmethod\n",
-        "    def __subclasshook__(cls, subclass):\n",
-        "        return (hasattr(subclass, 'visit') and\n",
-        "                callable(subclass.visit) and\n",
-        "                hasattr(subclass, 'accept') and \n",
-        "                callable(subclass.accept))\n",
-        "\n",
+        "    def __subclasshook__(cls, subclass: Any) -> bool:\n",
+        "        subclasses = (\n",
     ]
+
+    for _type in types:
+        typename = _type.split(":")[0].strip().lower()
+        methods.extend(
+            [
+                "            hasattr(subclass, ",
+                f'"visit_{typename.lower()}_{basename.lower()}") and\n',
+                "            callable(subclass.",
+                f"visit_{typename.lower()}_{basename.lower()}) and\n",
+            ]
+        )
+
+    methods.extend(
+        [
+            '            hasattr(subclass, "accept") and\n',
+            "            callable(subclass.accept)\n",
+            "        )\n",
+            "        return (subclasses)\n",
+            "\n",
+        ]
+    )
+
+    for _type in types:
+        typename = _type.split(":")[0].strip()
+        methods.extend(
+            [
+                "    @abc.abstractmethod\n",
+                f"    def visit_{typename.lower()}_{basename.lower()}",
+                f"(self, _{basename.lower()}: {typename}{basename}[T]) -> T:\n",
+                "        raise NotImplementedError\n",
+                "\n",
+            ]
+        )
+
+    return methods
 
 
 def printhelp() -> None:
