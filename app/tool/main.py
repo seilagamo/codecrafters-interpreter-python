@@ -8,12 +8,14 @@ from pathlib import Path
 
 def main() -> None:
 
-    if len(sys.argv) != 3:
+    if len(sys.argv) not in [2, 3]:
         printhelp()
         sys.exit(64)
 
     command = sys.argv[1]
-    output_dir = sys.argv[2]
+    output_dir = sys.argv[2] if len(sys.argv) == 3 else "ast"
+
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
 
     match command:
         case "generate_ast":
@@ -32,7 +34,6 @@ def main() -> None:
             printhelp()
             sys.exit(1)
 
-    # TODO: Check if the output_dir exists. Or create it if it doesn't exist.
     # TODO: Write everything in a buffer and then write it in the file.
 
 
@@ -50,7 +51,7 @@ def define_ast(output_dir: str, base_name: str, types: list[str]) -> None:
                 "\n",
             ]
         )
-        define_visitor(file, types)
+        define_visitor(file)
 
         # The AST classes.
         for _type in types:
@@ -78,7 +79,7 @@ def define_type(
     file.write("\n")
 
 
-def define_visitor(file: TextIOWrapper, types: list[str]) -> None:
+def define_visitor(file: TextIOWrapper) -> None:
     """Generate the abstract class Visitor."""
     file.writelines(
         [
@@ -95,6 +96,7 @@ def define_visitor(file: TextIOWrapper, types: list[str]) -> None:
 
 
 def printhelp() -> None:
+    """Print the help."""
     print(
         """
 usage: generate_ast <output directory>
