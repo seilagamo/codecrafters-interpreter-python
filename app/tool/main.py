@@ -45,18 +45,24 @@ def main() -> None:
 def define_ast(basename: str, types: list[str]) -> list[str]:
     """Define the ast."""
     ast = [
+        '"""Auto generated code to produce an ast."""\n',
+        "\n",
         "import abc\n",
         "from typing import Any\n",
-        "from app.tokens import Token\n",
         "\n",
+        "from app.tokens import Token\n",
+        "\n\n",
     ]
     ast.extend(define_visitor(basename, types))
     ast.extend(
         [
             f"class {basename}[T](abc.ABC):\n",
+            f'    """Class {basename}."""\n',
+            "\n",
             "    @abc.abstractmethod\n",
             "    def accept(self, visitor: Visitor[T]) -> T:\n",
-            "        pass\n\n",
+            '        """Accept the node."""\n',
+            "\n\n",
         ]
     )
 
@@ -65,6 +71,8 @@ def define_ast(basename: str, types: list[str]) -> list[str]:
         classname = _type.split(":")[0].strip()
         fields = _type.split(":")[1].strip()
         ast.extend(define_type(basename, classname, fields))
+    # Remove the last two extra lines.
+    del ast[-2:]
     return ast
 
 
@@ -76,6 +84,8 @@ def define_type(basename: str, classname: str, fieldlist: str) -> list[str]:
     ]
     _type = [
         f"class {classname}{basename}[T]({basename}[T]):\n",
+        f'    """Class {classname}{basename}."""\n',
+        "\n",
         f"    def __init__(self, {", ".join(fieldnames)}) -> None:\n",
     ]
 
@@ -89,10 +99,11 @@ def define_type(basename: str, classname: str, fieldlist: str) -> list[str]:
         [
             "    def accept(self, visitor: Visitor[T]) -> T:\n",
             "        return visitor.visit_",
-            f"{classname.lower()}_{basename.lower()}(self)\n\n",
+            f"{classname.lower()}_{basename.lower()}(self)\n",
+            "\n",
         ]
     )
-
+    _type.append("\n")
     return _type
 
 
@@ -102,28 +113,31 @@ def define_visitor(basename: str, types: list[str]) -> list[str]:
     # visitors
     methods: list[str] = [
         "class Visitor[T](metaclass=abc.ABCMeta):\n",
+        '    """Interface Visitor."""\n',
+        "\n",
         "    @classmethod\n",
         "    def __subclasshook__(cls, subclass: Any) -> bool:\n",
+        '        """Check the subclases."""\n',
         "        subclasses = (\n",
+        '            hasattr(subclass, "accept")\n',
+        "            and callable(subclass.accept)\n",
     ]
 
     for _type in types:
         typename = _type.split(":")[0].strip().lower()
         methods.extend(
             [
-                "            hasattr(subclass, ",
-                f'"visit_{typename.lower()}_{basename.lower()}") and\n',
-                "            callable(subclass.",
-                f"visit_{typename.lower()}_{basename.lower()}) and\n",
+                "            and hasattr(subclass, ",
+                f'"visit_{typename.lower()}_{basename.lower()}")\n',
+                "            and callable(subclass.",
+                f"visit_{typename.lower()}_{basename.lower()})\n",
             ]
         )
 
     methods.extend(
         [
-            '            hasattr(subclass, "accept") and\n',
-            "            callable(subclass.accept)\n",
             "        )\n",
-            "        return (subclasses)\n",
+            "        return subclasses\n",
             "\n",
         ]
     )
@@ -134,12 +148,16 @@ def define_visitor(basename: str, types: list[str]) -> list[str]:
             [
                 "    @abc.abstractmethod\n",
                 f"    def visit_{typename.lower()}_{basename.lower()}",
-                f"(self, _{basename.lower()}: {typename}{basename}[T]) -> T:\n",
+                "(self, ",
+                f'_{basename.lower()}: "{typename}{basename}[T]") -> T:\n',
+                '        """Visitor visit_',
+                f'{typename.lower()}_{basename.lower()}."""\n',
                 "        raise NotImplementedError\n",
                 "\n",
             ]
         )
 
+    methods.append("\n")
     return methods
 
 

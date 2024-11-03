@@ -36,7 +36,10 @@ disallow_untyped_decorators = false
 
 [tool.pylint.basic]
 no-docstring-rgx = "^_|^main$"
-source-roots = "."
+# source-roots = "."
+
+[tool.pylint.'MESSAGES CONTROL']
+disable = "E0602, R0903"
 
 [tool.pylint.format]
 max-line-length = 80
