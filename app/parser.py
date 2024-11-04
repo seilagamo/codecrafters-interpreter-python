@@ -1,5 +1,7 @@
 """Parser"""
 
+import sys
+
 from gen import expr
 
 from . import scanner
@@ -144,10 +146,10 @@ class Parser[T]:
 
     def _report_error(self, token: Token, message: str) -> None:
         if token.type == TokenType.EOF:
-            self.parse_errors.append(f"{token.line} at end {message}")
+            self.parse_errors.append(f"[line {token.line}] Error: {message}")
         else:
             self.parse_errors.append(
-                f"{token.line} at '{token.lexeme}' {message}"
+                f"[line {token.line}] Error at '{token.lexeme}': {message}"
             )
 
     def _synchronize(self) -> None:
@@ -181,5 +183,14 @@ def parse(contents: str) -> None:
     tokens = sc.scan_tokens()
     parser = Parser[str](tokens)
     _expr = parser.parse()
+    print_parse_errors(parser.parse_errors)
     if _expr is not None:
         print(AstPrinter().print(_expr))
+    if parser.parse_errors:
+        sys.exit(65)
+
+
+def print_parse_errors(errors: list[str]) -> None:
+    """Print a list of parse errors"""
+    for error in errors:
+        print(error, file=sys.stderr)
