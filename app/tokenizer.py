@@ -6,29 +6,30 @@ Collection of functions to manage the tokens returned by the scan.
 
 import sys
 
-from . import scanner, tokens
+from . import scanner
+from .tokens import Token
 
 
 def tokenize(content: str) -> None:
     """Tokenize and print the content."""
     if content:
-        toks, lexical_errors = scan(content)
+        tokens, lexical_errors = scan(content)
         print_lexical_errors(lexical_errors)
-        print_tokens(toks)
+        print_tokens(tokens)
         if lexical_errors:
             sys.exit(65)
     else:
         print("EOF  null")
 
 
-def tokens_to_string(toks: list[tokens.Token]) -> str:
+def tokens_to_string(tokens: list[Token]) -> str:
     """Transform a list of tokens in a string."""
-    return "\n".join([str(x) for x in toks])
+    return "\n".join([str(x) for x in tokens])
 
 
-def print_tokens(toks: list[tokens.Token]) -> None:
+def print_tokens(tokens: list[Token]) -> None:
     """Print a list of tokens."""
-    print(tokens_to_string(toks))
+    print(tokens_to_string(tokens))
 
 
 def print_lexical_errors(errors: list[str]) -> None:
@@ -37,7 +38,7 @@ def print_lexical_errors(errors: list[str]) -> None:
         print(error, file=sys.stderr)
 
 
-def scan(contents: str) -> tuple[list[tokens.Token], list[str]]:
+def scan(contents: str) -> tuple[list[Token], list[str]]:
     """Scan a string.
 
     Return a tuple containing the list of tokens and

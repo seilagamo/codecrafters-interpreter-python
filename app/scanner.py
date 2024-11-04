@@ -4,200 +4,192 @@ This module contains the functionality to scan a string.
 
 """
 
-from . import tokens
+from .tokens import KEYWORDS, Token, TokenType
 
 
 class Scanner:
     """Scanner"""
 
     def __init__(self, source: str) -> None:
-        self.source: str = source
-        self.start: int = 0
-        self.current: int = 0
-        self.line: int = 1
-        self.tokens: list[tokens.Token] = []
+        self._source: str = source
+        self._start: int = 0
+        self._current: int = 0
+        self._line: int = 1
+        self._tokens: list[Token] = []
         self.lexical_errors: list[str] = []
 
-    def is_at_end(self) -> bool:
+    def _is_at_end(self) -> bool:
         """Check if we are at the end of the source."""
-        return self.current >= len(self.source)
+        return self._current >= len(self._source)
 
-    def scan_tokens(self) -> list[tokens.Token]:
-        """Scan the tokens."""
-        while not self.is_at_end():
+    def scan_tokens(self) -> list[Token]:
+        """Scan the"""
+        while not self._is_at_end():
             # We are at the beginning of the next lexeme.
-            self.start = self.current
-            self.scan_token()
-        self.tokens.append(
-            tokens.Token(tokens.TokenType.EOF, "", None, self.line)
-        )
-        return self.tokens
+            self._start = self._current
+            self._scan_token()
+        self._tokens.append(Token(TokenType.EOF, "", None, self._line))
+        return self._tokens
 
-    def scan_token(self) -> None:
+    def _scan_token(self) -> None:
         """Scan a token."""
-        c: str = self.advance()
+        c: str = self._advance()
         match c:
             case "(":
-                self.add_token(tokens.TokenType.LEFT_PAREN)
+                self._add_token(TokenType.LEFT_PAREN)
             case ")":
-                self.add_token(tokens.TokenType.RIGHT_PAREN)
+                self._add_token(TokenType.RIGHT_PAREN)
             case "{":
-                self.add_token(tokens.TokenType.LEFT_BRACE)
+                self._add_token(TokenType.LEFT_BRACE)
             case "}":
-                self.add_token(tokens.TokenType.RIGHT_BRACE)
+                self._add_token(TokenType.RIGHT_BRACE)
             case ",":
-                self.add_token(tokens.TokenType.COMMA)
+                self._add_token(TokenType.COMMA)
             case ".":
-                self.add_token(tokens.TokenType.DOT)
+                self._add_token(TokenType.DOT)
             case "-":
-                self.add_token(tokens.TokenType.MINUS)
+                self._add_token(TokenType.MINUS)
             case "+":
-                self.add_token(tokens.TokenType.PLUS)
+                self._add_token(TokenType.PLUS)
             case ";":
-                self.add_token(tokens.TokenType.SEMICOLON)
+                self._add_token(TokenType.SEMICOLON)
             case "*":
-                self.add_token(tokens.TokenType.STAR)
+                self._add_token(TokenType.STAR)
             case "!":
-                self.add_token(
-                    tokens.TokenType.BANG_EQUAL
-                    if self.match("=")
-                    else tokens.TokenType.BANG
+                self._add_token(
+                    TokenType.BANG_EQUAL if self._match("=") else TokenType.BANG
                 )
             case "=":
-                self.add_token(
-                    tokens.TokenType.EQUAL_EQUAL
-                    if self.match("=")
-                    else tokens.TokenType.EQUAL
+                self._add_token(
+                    TokenType.EQUAL_EQUAL
+                    if self._match("=")
+                    else TokenType.EQUAL
                 )
             case "<":
-                self.add_token(
-                    tokens.TokenType.LESS_EQUAL
-                    if self.match("=")
-                    else tokens.TokenType.LESS
+                self._add_token(
+                    TokenType.LESS_EQUAL if self._match("=") else TokenType.LESS
                 )
             case ">":
-                self.add_token(
-                    tokens.TokenType.GREATER_EQUAL
-                    if self.match("=")
-                    else tokens.TokenType.GREATER
+                self._add_token(
+                    TokenType.GREATER_EQUAL
+                    if self._match("=")
+                    else TokenType.GREATER
                 )
             case "/":
-                if self.match("/"):
+                if self._match("/"):
                     # A comment goes until the end of the line.
-                    while self.peek() != "\n" and not self.is_at_end():
-                        self.advance()
+                    while self._peek() != "\n" and not self._is_at_end():
+                        self._advance()
                 else:
-                    self.add_token(tokens.TokenType.SLASH)
+                    self._add_token(TokenType.SLASH)
             case " " | "\r" | "\t":
                 pass
             case "\n":
-                self.line += 1
+                self._line += 1
             case '"':
-                self.string()
+                self._string()
             case c if c.isdigit():
-                self.number()
+                self._number()
             case c if isalpha(c):
-                self.identifier()
+                self._identifier()
             case _:
-                self.add_lexical_error(f"Unexpected character: {c}")
+                self._add_lexical_error(f"Unexpected character: {c}")
 
-    def advance(self) -> str:
+    def _advance(self) -> str:
         """Advance a character."""
-        c = self.source[self.current]
-        self.current += 1
+        c = self._source[self._current]
+        self._current += 1
         return c
 
-    def match(self, expected: str) -> bool:
+    def _match(self, expected: str) -> bool:
         """
         It's like a conditional advance(). We only consume the current character
           if it's what we're looking for.
         """
-        if self.is_at_end():
+        if self._is_at_end():
             return False
-        if self.source[self.current] != expected:
+        if self._source[self._current] != expected:
             return False
 
-        self.current += 1
+        self._current += 1
         return True
 
-    def peek(self) -> str:
+    def _peek(self) -> str:
         """Advance but doesn't consume the character."""
-        if self.is_at_end():
+        if self._is_at_end():
             return "\0"
-        return self.source[self.current]
+        return self._source[self._current]
 
-    def peek_next(self) -> str:
+    def _peek_next(self) -> str:
         """Lookahead"""
-        if self.current + 1 >= len(self.source):
+        if self._current + 1 >= len(self._source):
             return "\0"
-        return self.source[self.current + 1]
+        return self._source[self._current + 1]
 
-    def add_token(
-        self, token_type: tokens.TokenType, literal: object = None
-    ) -> None:
+    def _add_token(self, token_type: TokenType, literal: object = None) -> None:
         """Add a token to the token list."""
-        text: str = self.source[self.start : self.current]
-        self.tokens.append(tokens.Token(token_type, text, literal, self.line))
+        text: str = self._source[self._start : self._current]
+        self._tokens.append(Token(token_type, text, literal, self._line))
 
-    def add_lexical_error(self, msg: str) -> None:
+    def _add_lexical_error(self, msg: str) -> None:
         """Add an error to the lexical error list."""
-        self.lexical_errors.append(f"[line {self.line}] Error: {msg}")
+        self.lexical_errors.append(f"[line {self._line}] Error: {msg}")
 
-    def string(self) -> None:
+    def _string(self) -> None:
         """
         We consume characters until we hit the " that ends the string. We also
         gracefully handle running out of input before the string is closed and
         report an error for that.
         """
-        while self.peek() != '"' and not self.is_at_end():
-            if self.peek() == "\n":
-                self.line += 1
-            self.advance()
+        while self._peek() != '"' and not self._is_at_end():
+            if self._peek() == "\n":
+                self._line += 1
+            self._advance()
 
-        if self.is_at_end():
-            self.add_lexical_error("Unterminated string.")
+        if self._is_at_end():
+            self._add_lexical_error("Unterminated string.")
             return
 
         # The closing ".
-        self.advance()
+        self._advance()
 
         # Trim the surrounding quotes.
-        value = self.source[self.start + 1 : self.current - 1]
-        self.add_token(tokens.TokenType.STRING, value)
+        value = self._source[self._start + 1 : self._current - 1]
+        self._add_token(TokenType.STRING, value)
 
-    def number(self) -> None:
+    def _number(self) -> None:
         """
         We consume as many digits as we find for the integer part of the
         literal. Then we look for a fractional part, which is a decimal
         point (.) followed by at least one digit. If we do have a fractional
         part, again, we consume as many digits as we can find.
         """
-        while self.peek().isdigit():
-            self.advance()
+        while self._peek().isdigit():
+            self._advance()
 
         # Look for a fractional part.
-        if self.peek() == "." and self.peek_next().isdigit():
+        if self._peek() == "." and self._peek_next().isdigit():
             #  Consume the "."
-            self.advance()
+            self._advance()
 
-            while self.peek().isdigit():
-                self.advance()
+            while self._peek().isdigit():
+                self._advance()
 
-        self.add_token(
-            tokens.TokenType.NUMBER,
-            float(self.source[self.start : self.current]),
+        self._add_token(
+            TokenType.NUMBER,
+            float(self._source[self._start : self._current]),
         )
 
-    def identifier(self) -> None:
+    def _identifier(self) -> None:
         """Consume an identifier."""
-        while isalphanumeric(self.peek()):
-            self.advance()
+        while isalphanumeric(self._peek()):
+            self._advance()
 
-        text = self.source[self.start : self.current]
-        token_type = tokens.KEYWORDS.get(text)
+        text = self._source[self._start : self._current]
+        token_type = KEYWORDS.get(text)
         if not token_type:
-            token_type = tokens.TokenType.IDENTIFIER
-        self.add_token(token_type)
+            token_type = TokenType.IDENTIFIER
+        self._add_token(token_type)
 
 
 def isalpha(c: str) -> bool:

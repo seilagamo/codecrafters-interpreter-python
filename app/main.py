@@ -1,12 +1,12 @@
 """Lox interpreter
 
-This is a interpreted based on the book Crafting Interpreters.
+This is an interpreted based on the book Crafting Interpreters.
 
 """
 
 import sys
 
-from . import tokenizer
+from . import parser, tokenizer
 
 
 def main() -> None:
@@ -21,6 +21,8 @@ def main() -> None:
     match command:
         case "tokenize":
             tokenizer.tokenize(get_contents_from_file(filename))
+        case "parse":
+            parser.parse(get_contents_from_file(filename))
         case _:
             print(f"Unknown command: {command}", file=sys.stderr)
             printhelp()
