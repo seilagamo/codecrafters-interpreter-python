@@ -6,7 +6,7 @@ This is an interpreted based on the book Crafting Interpreters.
 
 import sys
 
-from . import parser, tokenizer
+from . import interpreter, parser, scanner
 
 
 def main() -> None:
@@ -20,9 +20,11 @@ def main() -> None:
 
     match command:
         case "tokenize":
-            tokenizer.tokenize(get_contents_from_file(filename))
+            scanner.tokenize_cmd(get_contents_from_file(filename))
         case "parse":
-            parser.parse(get_contents_from_file(filename))
+            parser.parse_cmd(get_contents_from_file(filename))
+        case "evaluate":
+            interpreter.interpret_cmd(get_contents_from_file(filename))
         case _:
             print(f"Unknown command: {command}", file=sys.stderr)
             printhelp()
@@ -45,6 +47,7 @@ usage: ./your_program.sh <command> <filename>
 Available commands:
     tokenize    Tokenize the input
     parse       Parse the input
+    evaluate    Evaluate the input
 """,
         file=sys.stderr,
     )

@@ -175,19 +175,25 @@ class Parser[T]:
             self._advance()
 
 
-def parse(contents: str) -> None:
+def parse_cmd(content: str) -> None:
     """The `parse` method processes the given contents of a source file by
     scanning it into tokens, parsing those tokens into an abstract syntax
     tree (AST), and then printing the resulting AST."""
-    sc = scanner.Scanner(contents)
+    expression, parse_errors = parse(content)
+    if parse_errors:
+        print_parse_errors(parse_errors)
+        sys.exit(65)
+    if expression is not None:
+        print(AstPrinter().print(expression))
+
+
+def parse(content: str) -> tuple[expr.Expr[str] | None, list[str]]:
+    """Parse the contents."""
+    sc = scanner.Scanner(content)
     tokens = sc.scan_tokens()
     parser = Parser[str](tokens)
     _expr = parser.parse()
-    print_parse_errors(parser.parse_errors)
-    if _expr is not None:
-        print(AstPrinter().print(_expr))
-    if parser.parse_errors:
-        sys.exit(65)
+    return _expr, parser.parse_errors
 
 
 def print_parse_errors(errors: list[str]) -> None:
