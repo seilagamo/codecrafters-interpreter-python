@@ -119,9 +119,9 @@ class Parser[T]:
 
     def _primary(self) -> expr.Expr[T]:
         if self._match(TokenType.FALSE):
-            return expr.LiteralExpr("false")
+            return expr.LiteralExpr(False)
         if self._match(TokenType.TRUE):
-            return expr.LiteralExpr("true")
+            return expr.LiteralExpr(True)
         if self._match(TokenType.NIL):
             return expr.LiteralExpr(None)
 

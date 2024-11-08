@@ -28,6 +28,8 @@ class AstPrinter(expr.Visitor[str]):
         """Visit Literal Expression"""
         if _expr.value is None:
             return "nil"
+        if isinstance(_expr.value, bool):
+            return str(_expr.value).lower()
         return str(_expr.value)
 
     def visit_unary_expr(self, _expr: expr.UnaryExpr[str]) -> str:

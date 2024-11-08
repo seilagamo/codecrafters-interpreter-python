@@ -151,6 +151,9 @@ def stringify(obj: Any) -> str:
             text = text[0 : len(text) - 2]
         return text
 
+    if isinstance(obj, bool):
+        return str(obj).lower()
+
     return str(obj)
 
 
