@@ -150,7 +150,7 @@ def test_cli_evaluate(
         with pytest.raises(SystemExit) as pytest_wrapped_e:
             main.main()
         assert pytest_wrapped_e.type == SystemExit
-        assert pytest_wrapped_e.value.code == 65
+        assert pytest_wrapped_e.value.code == 70
     else:
         main.main()
 

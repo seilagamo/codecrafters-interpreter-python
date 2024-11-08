@@ -19,7 +19,7 @@ class Interpreter(expr.Visitor[object]):
         """A custom exception for interpreter errors."""
 
         def __init__(self, token: Token, msg: str) -> None:
-            super(msg)
+            super().__init__(msg)
             self.msg = msg
             self.token = token
 
@@ -104,7 +104,7 @@ class Interpreter(expr.Visitor[object]):
         return _expr.accept(self)
 
     def _runtime_error(self, err: InterpreterError) -> None:
-        self.runtime_errors.append(f"[line {err.token.line}] Error: {err.msg}")
+        self.runtime_errors.append(f"{err.msg}\n[line {err.token.line}]")
 
 
 def istruthy(obj: Any) -> bool:
@@ -160,10 +160,10 @@ def stringify(obj: Any) -> str:
 def interpret_cmd(content: str) -> None:
     """Interpret command."""
     value, runtime_errors = interpret(content)
-    print(stringify(value))
     if runtime_errors:
         print_runtime_errors(runtime_errors)
         sys.exit(70)
+    print(stringify(value))
 
 
 def interpret(content: str) -> tuple[Any, list[str]]:
