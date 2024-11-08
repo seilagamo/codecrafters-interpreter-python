@@ -137,7 +137,7 @@ def check_number_operands(operator: Token, left: Any, right: Any) -> None:
     """Check if both operands are numbers."""
     if isinstance(left, float) and isinstance(right, float):
         return
-    raise Interpreter.InterpreterError(operator, "Operands must be a numbers.")
+    raise Interpreter.InterpreterError(operator, "Operands must be numbers.")
 
 
 def stringify(obj: Any) -> str:
