@@ -67,7 +67,7 @@ class Interpreter(expr.Visitor[object]):
                 elif isinstance(left, str) and isinstance(right, str):
                     value = str(left) + str(right)
                 else:
-                    raise RuntimeError(
+                    raise Interpreter.InterpreterError(
                         _expr.operator,
                         "Operands must be two numbers or two strings.",
                     )
