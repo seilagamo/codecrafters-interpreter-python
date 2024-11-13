@@ -2,7 +2,7 @@
 
 import sys
 
-from gen import expr
+from gen import expr, stmt
 
 from . import scanner
 from .astprinter import AstPrinter
@@ -28,14 +28,19 @@ class Parser[T]:
         self._current = 0
         self.parse_errors: list[str] = []
 
-    def parse(self) -> expr.Expr[T] | None:
+    def parse(self) -> list[stmt.Stmt[T]]:
         """parse"""
+        statements: list[stmt.Stmt[T]] = []
         try:
-            return self._expression()
-        except self.ParseError:
-            return None
+            while not self._is_at_end():
+                statements.append(self._statement())
+            return statements
 
-    def _expression(self) -> expr.Expr[T]:
+        except self.ParseError:
+            return statements
+
+    def expression(self) -> expr.Expr[T]:
+        """Parse an expression."""
         return self._equality()
 
     def _equality(self) -> expr.Expr[T]:
@@ -129,7 +134,7 @@ class Parser[T]:
             return expr.LiteralExpr(self._previous().literal)
 
         if self._match(TokenType.LEFT_PAREN):
-            _expr = self._expression()
+            _expr = self.expression()
             self._consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.")
             return expr.GroupingExpr(_expr)
 
@@ -174,29 +179,58 @@ class Parser[T]:
 
             self._advance()
 
+    def _statement(self) -> stmt.Stmt[T]:
+        if self._match(TokenType.PRINT):
+            return self._print_statement()
+
+        return self._expression_statement()
+
+    def _print_statement(self) -> stmt.Stmt[T]:
+        value = self.expression()
+        self._consume(TokenType.SEMICOLON, "Expect ';' after value.")
+        return stmt.PrintStmt(value)
+
+    def _expression_statement(self) -> stmt.Stmt[T]:
+        _expr = self.expression()
+        self._consume(TokenType.SEMICOLON, "Expect ';' after expression.")
+        return stmt.ExpressionStmt(_expr)
+
 
 def parse_cmd(content: str) -> None:
     """The `parse` method processes the given contents of a source file by
     scanning it into tokens, parsing those tokens into an abstract syntax
     tree (AST), and then printing the resulting AST."""
-    expression, parse_errors = parse(content)
+    expression, parse_errors = parse_expression(content)
+
     if parse_errors:
-        print_parse_errors(parse_errors)
+        _print_parse_errors(parse_errors)
         sys.exit(65)
     if expression is not None:
         print(AstPrinter().print(expression))
 
 
-def parse(content: str) -> tuple[expr.Expr[str] | None, list[str]]:
+def parse(content: str) -> tuple[list[stmt.Stmt[str]], list[str]]:
     """Parse the contents."""
     sc = scanner.Scanner(content)
     tokens = sc.scan_tokens()
     parser = Parser[str](tokens)
-    _expr = parser.parse()
+    statements = parser.parse()
+    return statements, parser.parse_errors
+
+
+def parse_expression(content: str) -> tuple[expr.Expr[str] | None, list[str]]:
+    """Parse the contents."""
+    sc = scanner.Scanner(content)
+    tokens = sc.scan_tokens()
+    parser = Parser[str](tokens)
+    try:
+        _expr = parser.expression()
+    except Parser.ParseError:
+        _expr = None
     return _expr, parser.parse_errors
 
 
-def print_parse_errors(errors: list[str]) -> None:
+def _print_parse_errors(errors: list[str]) -> None:
     """Print a list of parse errors"""
     for error in errors:
         print(error, file=sys.stderr)

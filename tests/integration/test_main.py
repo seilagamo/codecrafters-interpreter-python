@@ -159,3 +159,43 @@ def test_cli_evaluate(
     stderr = captured.err
     assert stdout == output_content
     assert stderr == error_content
+
+
+@pytest.mark.parametrize("lox,output,error", list_test_files("run"))
+def test_cli_run(
+    lox: str,
+    output: str,
+    error: str,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture,
+) -> None:
+    """Test the evaluate command."""
+    monkeypatch.setattr("sys.argv", ["", "run", str(DATA_FOLDER / "run" / lox)])
+
+    output_content = ""
+    try:
+        with open(str(DATA_FOLDER / "run" / output), encoding="utf-8") as file:
+            output_content = file.read()
+    except FileNotFoundError:
+        pass
+
+    error_content = ""
+    try:
+        with open(str(DATA_FOLDER / "run" / error), encoding="utf-8") as file:
+            error_content = file.read()
+    except FileNotFoundError:
+        pass
+
+    if error_content:
+        with pytest.raises(SystemExit) as pytest_wrapped_e:
+            main.main()
+        assert pytest_wrapped_e.type == SystemExit
+        assert pytest_wrapped_e.value.code == 70
+    else:
+        main.main()
+
+    captured = capsys.readouterr()
+    stdout = captured.out
+    stderr = captured.err
+    assert stdout == output_content
+    assert stderr == error_content

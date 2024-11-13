@@ -95,7 +95,7 @@ class Scanner:
             case c if isalpha(c):
                 self._identifier()
             case _:
-                self._add_lexical_error(f"Unexpected character: {c}")
+                self._lexical_error(f"Unexpected character: {c}")
 
     def _advance(self) -> str:
         """Advance a character."""
@@ -133,7 +133,7 @@ class Scanner:
         text: str = self._source[self._start : self._current]
         self._tokens.append(Token(token_type, text, literal, self._line))
 
-    def _add_lexical_error(self, msg: str) -> None:
+    def _lexical_error(self, msg: str) -> None:
         """Add an error to the lexical error list."""
         self.lexical_errors.append(f"[line {self._line}] Error: {msg}")
 
@@ -149,7 +149,7 @@ class Scanner:
             self._advance()
 
         if self._is_at_end():
-            self._add_lexical_error("Unterminated string.")
+            self._lexical_error("Unterminated string.")
             return
 
         # The closing ".

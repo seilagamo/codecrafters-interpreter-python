@@ -11,7 +11,7 @@ class Visitor[T](metaclass=abc.ABCMeta):
 
     @classmethod
     def __subclasshook__(cls, subclass: Any) -> bool:
-        """Check the subclases."""
+        """Check the subclasses."""
         subclasses = (
             hasattr(subclass, "accept")
             and callable(subclass.accept)

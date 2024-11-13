@@ -6,7 +6,6 @@ from pathlib import Path
 
 
 def main() -> None:
-
     if len(sys.argv) not in [2, 3]:
         printhelp()
         sys.exit(64)
@@ -32,6 +31,19 @@ def main() -> None:
                     "Unary    : Token operator, Expr[T] right",
                 ],
             )
+
+            path = Path(output_dir) / f"{basename.lower()}.py"
+            with open(path, "w", encoding="utf-8") as file:
+                file.writelines(ast)
+
+            basename = "Stmt"
+            ast = define_ast(
+                basename,
+                [
+                    "Expression : Expr[T] expression",
+                    "Print      : Expr[T] expression",
+                ],
+            )
             path = Path(output_dir) / f"{basename.lower()}.py"
             with open(path, "w", encoding="utf-8") as file:
                 file.writelines(ast)
@@ -50,9 +62,24 @@ def define_ast(basename: str, types: list[str]) -> list[str]:
         "import abc\n",
         "from typing import Any\n",
         "\n",
-        "from app.tokens import Token\n",
-        "\n\n",
     ]
+
+    match basename:
+        case "Expr":
+            ast.extend(
+                [
+                    "from app.tokens import Token\n",
+                    "\n\n",
+                ]
+            )
+        case "Stmt":
+            ast.extend(
+                [
+                    "from .expr import Expr\n",
+                    "\n\n",
+                ]
+            )
+
     ast.extend(define_visitor(basename, types))
     ast.extend(
         [
@@ -117,7 +144,7 @@ def define_visitor(basename: str, types: list[str]) -> list[str]:
         "\n",
         "    @classmethod\n",
         "    def __subclasshook__(cls, subclass: Any) -> bool:\n",
-        '        """Check the subclases."""\n',
+        '        """Check the subclasses."""\n',
         "        subclasses = (\n",
         '            hasattr(subclass, "accept")\n',
         "            and callable(subclass.accept)\n",

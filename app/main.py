@@ -25,6 +25,8 @@ def main() -> None:
             parser.parse_cmd(get_contents_from_file(filename))
         case "evaluate":
             interpreter.interpret_cmd(get_contents_from_file(filename))
+        case "run":
+            interpreter.run_cmd(get_contents_from_file(filename))
         case _:
             print(f"Unknown command: {command}", file=sys.stderr)
             printhelp()

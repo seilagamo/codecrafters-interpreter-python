@@ -6,13 +6,13 @@ Module to evaluate.
 import sys
 from typing import Any
 
-from gen import expr
+from gen import expr, stmt
 
 from . import parser
 from .tokens import Token, TokenType
 
 
-class Interpreter(expr.Visitor[object]):
+class Interpreter(expr.Visitor[object], stmt.Visitor[None]):
     """Interpreter"""
 
     class InterpreterError(RuntimeError):
@@ -23,18 +23,19 @@ class Interpreter(expr.Visitor[object]):
             self.msg = msg
             self.token = token
 
-    def __init__(self, expression: expr.Expr[Any]):
-        self._expression = expression
+    def __init__(self, _statements: list[stmt.Stmt[Any]] | None = None):
+        self._statements = _statements
         self.runtime_errors: list[str] = []
 
-    def interpret(self) -> Any | None:
-        """Interpret an expression."""
+    def interpret(self) -> None:
+        """Interpret a list of statements."""
+        if self._statements is None:
+            return
         try:
-            value = self.evaluate(self._expression)
-            return value
+            for statement in self._statements:
+                self._execute(statement)
         except Interpreter.InterpreterError as e:
-            self._runtime_error(e)
-            return None
+            self.runtime_error(e)
 
     def visit_binary_expr(self, _expr: "expr.BinaryExpr[Any]") -> Any:
         left = self.evaluate(_expr.left)
@@ -43,23 +44,23 @@ class Interpreter(expr.Visitor[object]):
         value: bool | float | str | None = None
         match _expr.operator.type:
             case TokenType.GREATER:
-                check_number_operands(_expr.operator, left, right)
+                _check_number_operands(_expr.operator, left, right)
                 value = float(left) > float(right)
             case TokenType.GREATER_EQUAL:
-                check_number_operands(_expr.operator, left, right)
+                _check_number_operands(_expr.operator, left, right)
                 value = float(left) >= float(right)
             case TokenType.LESS:
-                check_number_operands(_expr.operator, left, right)
+                _check_number_operands(_expr.operator, left, right)
                 value = float(left) < float(right)
             case TokenType.LESS_EQUAL:
-                check_number_operands(_expr.operator, left, right)
+                _check_number_operands(_expr.operator, left, right)
                 value = float(left) <= float(right)
             case TokenType.BANG_EQUAL:
                 value = not isequal(left, right)
             case TokenType.EQUAL_EQUAL:
                 value = isequal(left, right)
             case TokenType.MINUS:
-                check_number_operands(_expr.operator, left, right)
+                _check_number_operands(_expr.operator, left, right)
                 value = float(left) - float(right)
             case TokenType.PLUS:
                 if isinstance(left, float) and isinstance(right, float):
@@ -72,10 +73,10 @@ class Interpreter(expr.Visitor[object]):
                         "Operands must be two numbers or two strings.",
                     )
             case TokenType.SLASH:
-                check_number_operands(_expr.operator, left, right)
+                _check_number_operands(_expr.operator, left, right)
                 value = float(left) / float(right)
             case TokenType.STAR:
-                check_number_operands(_expr.operator, left, right)
+                _check_number_operands(_expr.operator, left, right)
                 value = float(left) * float(right)
 
         return value
@@ -93,18 +94,29 @@ class Interpreter(expr.Visitor[object]):
             case TokenType.BANG:
                 return not istruthy(right)
             case TokenType.MINUS:
-                check_number_operand(_expr.operator, right)
+                _check_number_operand(_expr.operator, right)
                 return -float(right)
 
         # Unreachable.
         return None
 
+    def visit_expression_stmt(self, _stmt: "stmt.ExpressionStmt[Any]") -> None:
+        self.evaluate(_stmt.expression)
+
+    def visit_print_stmt(self, _stmt: "stmt.PrintStmt[Any]") -> None:
+        value = self.evaluate(_stmt.expression)
+        print(stringify(value))
+
     def evaluate(self, _expr: expr.Expr[Any]) -> Any:
         """Evaluate an expression."""
         return _expr.accept(self)
 
-    def _runtime_error(self, err: InterpreterError) -> None:
+    def runtime_error(self, err: InterpreterError) -> None:
+        """Create a runtime error."""
         self.runtime_errors.append(f"{err.msg}\n[line {err.token.line}]")
+
+    def _execute(self, _stmt: stmt.Stmt[Any]) -> None:
+        _stmt.accept(self)
 
 
 def istruthy(obj: Any) -> bool:
@@ -126,14 +138,14 @@ def isequal(left: Any, right: Any) -> bool:
     return outcome
 
 
-def check_number_operand(operator: Token, operand: Any) -> None:
+def _check_number_operand(operator: Token, operand: Any) -> None:
     """Check if an operand is a number."""
     if isinstance(operand, float):
         return
     raise Interpreter.InterpreterError(operator, "Operand must be a number.")
 
 
-def check_number_operands(operator: Token, left: Any, right: Any) -> None:
+def _check_number_operands(operator: Token, left: Any, right: Any) -> None:
     """Check if both operands are numbers."""
     if isinstance(left, float) and isinstance(right, float):
         return
@@ -159,26 +171,50 @@ def stringify(obj: Any) -> str:
 
 def interpret_cmd(content: str) -> None:
     """Interpret command."""
-    value, runtime_errors = interpret(content)
+    value, runtime_errors = _interpret(content)
     if runtime_errors:
-        print_runtime_errors(runtime_errors)
+        _print_runtime_errors(runtime_errors)
         sys.exit(70)
     print(stringify(value))
 
 
-def interpret(content: str) -> tuple[Any, list[str]]:
+def _interpret(content: str) -> tuple[Any, list[str]]:
     """Interpret the content."""
-    expression, parse_errors = parser.parse(content)
+    expression, parse_errors = parser.parse_expression(content)
     if parse_errors:
         sys.exit(65)
     if expression is not None:
-        interpreter = Interpreter(expression)
-        value = interpreter.interpret()
+        interpreter = Interpreter()
+        value = None
+        try:
+            value = interpreter.evaluate(expression)
+        except Interpreter.InterpreterError as e:
+            interpreter.runtime_error(e)
         return value, interpreter.runtime_errors
     return None, []
 
 
-def print_runtime_errors(errors: list[str]) -> None:
+def run_cmd(content: str) -> None:
+    """Run command."""
+    runtime_errors = _run(content)
+    if runtime_errors:
+        _print_runtime_errors(runtime_errors)
+        sys.exit(70)
+
+
+def _run(content: str) -> list[str]:
+    """Interpret the content."""
+    statements, parse_errors = parser.parse(content)
+    if parse_errors:
+        sys.exit(65)
+    if statements:
+        interpreter = Interpreter(statements)
+        interpreter.interpret()
+        return interpreter.runtime_errors
+    return []
+
+
+def _print_runtime_errors(errors: list[str]) -> None:
     """Print a list of runtime errors"""
     for error in errors:
         print(error, file=sys.stderr)
