@@ -25,10 +25,11 @@ def main() -> None:
             ast = define_ast(
                 basename,
                 [
-                    "Binary   : Expr[T] left, Token operator, Expr[T] right",
-                    "Grouping : Expr[T] expression",
+                    "Binary   : Expr left, Token operator, Expr right",
+                    "Grouping : Expr expression",
                     "Literal  : object value",
-                    "Unary    : Token operator, Expr[T] right",
+                    "Unary    : Token operator, Expr right",
+                    "Variable : Token name",
                 ],
             )
 
@@ -40,8 +41,9 @@ def main() -> None:
             ast = define_ast(
                 basename,
                 [
-                    "Expression : Expr[T] expression",
-                    "Print      : Expr[T] expression",
+                    "Expression : Expr expression",
+                    "Print      : Expr expression",
+                    "Var        : Token name, Expr initializer",
                 ],
             )
             path = Path(output_dir) / f"{basename.lower()}.py"
@@ -62,32 +64,22 @@ def define_ast(basename: str, types: list[str]) -> list[str]:
         "import abc\n",
         "from typing import Any\n",
         "\n",
+        "from app.tokens import Token\n",
     ]
 
-    match basename:
-        case "Expr":
-            ast.extend(
-                [
-                    "from app.tokens import Token\n",
-                    "\n\n",
-                ]
-            )
-        case "Stmt":
-            ast.extend(
-                [
-                    "from .expr import Expr\n",
-                    "\n\n",
-                ]
-            )
+    if basename == "Stmt":
+        ast.append("from .expr import Expr\n")
+
+    ast.append("\n\n")
 
     ast.extend(define_visitor(basename, types))
     ast.extend(
         [
-            f"class {basename}[T](abc.ABC):\n",
+            f"class {basename}(abc.ABC):\n",
             f'    """Class {basename}."""\n',
             "\n",
             "    @abc.abstractmethod\n",
-            "    def accept(self, visitor: Visitor[T]) -> T:\n",
+            "    def accept(self, visitor: Visitor) -> Any:\n",
             '        """Accept the node."""\n',
             "\n\n",
         ]
@@ -110,7 +102,7 @@ def define_type(basename: str, classname: str, fieldlist: str) -> list[str]:
         for field in fieldlist.split(", ")
     ]
     _type = [
-        f"class {classname}{basename}[T]({basename}[T]):\n",
+        f"class {classname}{basename}({basename}):\n",
         f'    """Class {classname}{basename}."""\n',
         "\n",
         f"    def __init__(self, {", ".join(fieldnames)}) -> None:\n",
@@ -124,7 +116,7 @@ def define_type(basename: str, classname: str, fieldlist: str) -> list[str]:
 
     _type.extend(
         [
-            "    def accept(self, visitor: Visitor[T]) -> T:\n",
+            "    def accept(self, visitor: Visitor) -> Any:\n",
             "        return visitor.visit_",
             f"{classname.lower()}_{basename.lower()}(self)\n",
             "\n",
@@ -139,7 +131,7 @@ def define_visitor(basename: str, types: list[str]) -> list[str]:
 
     # visitors
     methods: list[str] = [
-        "class Visitor[T](metaclass=abc.ABCMeta):\n",
+        "class Visitor(metaclass=abc.ABCMeta):\n",
         '    """Interface Visitor."""\n',
         "\n",
         "    @classmethod\n",
@@ -176,7 +168,7 @@ def define_visitor(basename: str, types: list[str]) -> list[str]:
                 "    @abc.abstractmethod\n",
                 f"    def visit_{typename.lower()}_{basename.lower()}",
                 "(self, ",
-                f'_{basename.lower()}: "{typename}{basename}[T]") -> T:\n',
+                f'_{basename.lower()}: "{typename}{basename}") -> Any:\n',
                 '        """Visitor visit_',
                 f'{typename.lower()}_{basename.lower()}."""\n',
                 "        raise NotImplementedError\n",

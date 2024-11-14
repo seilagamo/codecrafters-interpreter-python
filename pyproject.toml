@@ -51,6 +51,7 @@ profile = "black"
 testpaths = [
     "tests"
 ]
+pythonpath = ["app"]
 addopts = "--cov"
 python_files = [
     "test*.py"

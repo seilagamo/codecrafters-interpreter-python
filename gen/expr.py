@@ -6,7 +6,7 @@ from typing import Any
 from app.tokens import Token
 
 
-class Visitor[T](metaclass=abc.ABCMeta):
+class Visitor(metaclass=abc.ABCMeta):
     """Interface Visitor."""
 
     @classmethod
@@ -23,76 +23,93 @@ class Visitor[T](metaclass=abc.ABCMeta):
             and callable(subclass.visit_literal_expr)
             and hasattr(subclass, "visit_unary_expr")
             and callable(subclass.visit_unary_expr)
+            and hasattr(subclass, "visit_variable_expr")
+            and callable(subclass.visit_variable_expr)
         )
         return subclasses
 
     @abc.abstractmethod
-    def visit_binary_expr(self, _expr: "BinaryExpr[T]") -> T:
+    def visit_binary_expr(self, _expr: "BinaryExpr") -> Any:
         """Visitor visit_binary_expr."""
         raise NotImplementedError
 
     @abc.abstractmethod
-    def visit_grouping_expr(self, _expr: "GroupingExpr[T]") -> T:
+    def visit_grouping_expr(self, _expr: "GroupingExpr") -> Any:
         """Visitor visit_grouping_expr."""
         raise NotImplementedError
 
     @abc.abstractmethod
-    def visit_literal_expr(self, _expr: "LiteralExpr[T]") -> T:
+    def visit_literal_expr(self, _expr: "LiteralExpr") -> Any:
         """Visitor visit_literal_expr."""
         raise NotImplementedError
 
     @abc.abstractmethod
-    def visit_unary_expr(self, _expr: "UnaryExpr[T]") -> T:
+    def visit_unary_expr(self, _expr: "UnaryExpr") -> Any:
         """Visitor visit_unary_expr."""
         raise NotImplementedError
 
+    @abc.abstractmethod
+    def visit_variable_expr(self, _expr: "VariableExpr") -> Any:
+        """Visitor visit_variable_expr."""
+        raise NotImplementedError
 
-class Expr[T](abc.ABC):
+
+class Expr(abc.ABC):
     """Class Expr."""
 
     @abc.abstractmethod
-    def accept(self, visitor: Visitor[T]) -> T:
+    def accept(self, visitor: Visitor) -> Any:
         """Accept the node."""
 
 
-class BinaryExpr[T](Expr[T]):
+class BinaryExpr(Expr):
     """Class BinaryExpr."""
 
-    def __init__(self, left: Expr[T], operator: Token, right: Expr[T]) -> None:
+    def __init__(self, left: Expr, operator: Token, right: Expr) -> None:
         self.left = left
         self.operator = operator
         self.right = right
 
-    def accept(self, visitor: Visitor[T]) -> T:
+    def accept(self, visitor: Visitor) -> Any:
         return visitor.visit_binary_expr(self)
 
 
-class GroupingExpr[T](Expr[T]):
+class GroupingExpr(Expr):
     """Class GroupingExpr."""
 
-    def __init__(self, expression: Expr[T]) -> None:
+    def __init__(self, expression: Expr) -> None:
         self.expression = expression
 
-    def accept(self, visitor: Visitor[T]) -> T:
+    def accept(self, visitor: Visitor) -> Any:
         return visitor.visit_grouping_expr(self)
 
 
-class LiteralExpr[T](Expr[T]):
+class LiteralExpr(Expr):
     """Class LiteralExpr."""
 
     def __init__(self, value: object) -> None:
         self.value = value
 
-    def accept(self, visitor: Visitor[T]) -> T:
+    def accept(self, visitor: Visitor) -> Any:
         return visitor.visit_literal_expr(self)
 
 
-class UnaryExpr[T](Expr[T]):
+class UnaryExpr(Expr):
     """Class UnaryExpr."""
 
-    def __init__(self, operator: Token, right: Expr[T]) -> None:
+    def __init__(self, operator: Token, right: Expr) -> None:
         self.operator = operator
         self.right = right
 
-    def accept(self, visitor: Visitor[T]) -> T:
+    def accept(self, visitor: Visitor) -> Any:
         return visitor.visit_unary_expr(self)
+
+
+class VariableExpr(Expr):
+    """Class VariableExpr."""
+
+    def __init__(self, name: Token) -> None:
+        self.name = name
+
+    def accept(self, visitor: Visitor) -> Any:
+        return visitor.visit_variable_expr(self)

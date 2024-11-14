@@ -4,27 +4,27 @@ Convert a tree to a string.
 
 from gen import expr
 
-from . import tokens
+from .tokens import Token, TokenType
 
 
-class AstPrinter(expr.Visitor[str]):
+class AstPrinter(expr.Visitor):
     """Ast Printer
     Convert a tree to string.
     """
 
-    def print(self, _expr: expr.Expr[str]) -> str:
+    def print(self, _expr: expr.Expr) -> object:
         """Print"""
         return _expr.accept(self)
 
-    def visit_binary_expr(self, _expr: expr.BinaryExpr[str]) -> str:
+    def visit_binary_expr(self, _expr: expr.BinaryExpr) -> str:
         """Visit Binary Expression"""
         return self.parenthesize(_expr.operator.lexeme, _expr.left, _expr.right)
 
-    def visit_grouping_expr(self, _expr: expr.GroupingExpr[str]) -> str:
+    def visit_grouping_expr(self, _expr: expr.GroupingExpr) -> str:
         """Visit Grouping Expression"""
         return self.parenthesize("group", _expr.expression)
 
-    def visit_literal_expr(self, _expr: expr.LiteralExpr[str]) -> str:
+    def visit_literal_expr(self, _expr: expr.LiteralExpr) -> object:
         """Visit Literal Expression"""
         if _expr.value is None:
             return "nil"
@@ -32,17 +32,21 @@ class AstPrinter(expr.Visitor[str]):
             return str(_expr.value).lower()
         return str(_expr.value)
 
-    def visit_unary_expr(self, _expr: expr.UnaryExpr[str]) -> str:
+    def visit_unary_expr(self, _expr: expr.UnaryExpr) -> str:
         """Visit Unary Expression"""
         return self.parenthesize(_expr.operator.lexeme, _expr.right)
 
-    def parenthesize(self, name: str, *exprs: expr.Expr[str]) -> str:
+    def visit_variable_expr(self, _expr: "expr.VariableExpr") -> str:
+        """Visit Variable Expression"""
+        return self.parenthesize(_expr.name.lexeme)
+
+    def parenthesize(self, name: str, *exprs: expr.Expr) -> str:
         """Parenthesize"""
         builder: str = f"({name}"
 
         for _expr in exprs:
             builder += " "
-            builder += _expr.accept(self)
+            builder += str(_expr.accept(self))
 
         builder += ")"
 
@@ -53,13 +57,13 @@ expr.Visitor.register(AstPrinter)
 
 
 def main() -> None:
-    expression = expr.BinaryExpr[str](
-        expr.UnaryExpr[str](
-            tokens.Token(tokens.TokenType.MINUS, "-", None, 1),
-            expr.LiteralExpr[str](123),
+    expression = expr.BinaryExpr(
+        expr.UnaryExpr(
+            Token(TokenType.MINUS, "-", None, 1),
+            expr.LiteralExpr(123),
         ),
-        tokens.Token(tokens.TokenType.STAR, "*", None, 1),
-        expr.GroupingExpr[str](expr.LiteralExpr[str](45.67)),
+        Token(TokenType.STAR, "*", None, 1),
+        expr.GroupingExpr(expr.LiteralExpr(45.67)),
     )
 
     print(AstPrinter().print(expression))

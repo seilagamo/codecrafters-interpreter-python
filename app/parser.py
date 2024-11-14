@@ -9,7 +9,7 @@ from .astprinter import AstPrinter
 from .tokens import Token, TokenType
 
 
-class Parser[T]:
+class Parser:
     """
     A parser class that processes a list of tokens and constructs an abstract
     syntax tree (AST) for expressions.
@@ -23,27 +23,27 @@ class Parser[T]:
     class ParseError(Exception):
         """A custom exception for parsing errors."""
 
-    def __init__(self, tokens: list[Token]):
+    def __init__(self, tokens: list[Token]) -> None:
         self._tokens = tokens
         self._current = 0
         self.parse_errors: list[str] = []
 
-    def parse(self) -> list[stmt.Stmt[T]]:
+    def parse(self) -> list[stmt.Stmt | None]:
         """parse"""
-        statements: list[stmt.Stmt[T]] = []
+        statements: list[stmt.Stmt | None] = []
         try:
             while not self._is_at_end():
-                statements.append(self._statement())
+                statements.append(self._declaration())
             return statements
 
         except self.ParseError:
             return statements
 
-    def expression(self) -> expr.Expr[T]:
+    def expression(self) -> expr.Expr:
         """Parse an expression."""
         return self._equality()
 
-    def _equality(self) -> expr.Expr[T]:
+    def _equality(self) -> expr.Expr:
         _expr = self._comparison()
 
         while self._match(TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL):
@@ -79,7 +79,7 @@ class Parser[T]:
     def _previous(self) -> Token:
         return self._tokens[self._current - 1]
 
-    def _comparison(self) -> expr.Expr[T]:
+    def _comparison(self) -> expr.Expr:
         _expr = self._term()
 
         while self._match(
@@ -94,7 +94,7 @@ class Parser[T]:
 
         return _expr
 
-    def _term(self) -> expr.Expr[T]:
+    def _term(self) -> expr.Expr:
         _expr = self._factor()
 
         while self._match(TokenType.MINUS, TokenType.PLUS):
@@ -104,7 +104,7 @@ class Parser[T]:
 
         return _expr
 
-    def _factor(self) -> expr.Expr[T]:
+    def _factor(self) -> expr.Expr:
         _expr = self._unary()
 
         while self._match(TokenType.SLASH, TokenType.STAR):
@@ -114,7 +114,7 @@ class Parser[T]:
 
         return _expr
 
-    def _unary(self) -> expr.Expr[T]:
+    def _unary(self) -> expr.Expr:
         if self._match(TokenType.BANG, TokenType.MINUS):
             operator = self._previous()
             right = self._unary()
@@ -122,7 +122,7 @@ class Parser[T]:
 
         return self._primary()
 
-    def _primary(self) -> expr.Expr[T]:
+    def _primary(self) -> expr.Expr:
         if self._match(TokenType.FALSE):
             return expr.LiteralExpr(False)
         if self._match(TokenType.TRUE):
@@ -132,6 +132,9 @@ class Parser[T]:
 
         if self._match(TokenType.NUMBER, TokenType.STRING):
             return expr.LiteralExpr(self._previous().literal)
+
+        if self._match(TokenType.IDENTIFIER):
+            return expr.VariableExpr(self._previous())
 
         if self._match(TokenType.LEFT_PAREN):
             _expr = self.expression()
@@ -179,18 +182,37 @@ class Parser[T]:
 
             self._advance()
 
-    def _statement(self) -> stmt.Stmt[T]:
+    def _declaration(self) -> stmt.Stmt | None:
+        try:
+            if self._match(TokenType.VAR):
+                return self._var_declaration()
+            return self._statement()
+        except self.ParseError:
+            self._synchronize()
+            return None
+
+    def _var_declaration(self) -> stmt.Stmt:
+        name = self._consume(TokenType.IDENTIFIER, "Expect variable name.")
+        initializer = None
+        if self._match(TokenType.EQUAL):
+            initializer = self.expression()
+        self._consume(
+            TokenType.SEMICOLON, "Expect ';' after variable declaration."
+        )
+        return stmt.VarStmt(name, initializer)
+
+    def _statement(self) -> stmt.Stmt:
         if self._match(TokenType.PRINT):
             return self._print_statement()
 
         return self._expression_statement()
 
-    def _print_statement(self) -> stmt.Stmt[T]:
+    def _print_statement(self) -> stmt.Stmt:
         value = self.expression()
         self._consume(TokenType.SEMICOLON, "Expect ';' after value.")
         return stmt.PrintStmt(value)
 
-    def _expression_statement(self) -> stmt.Stmt[T]:
+    def _expression_statement(self) -> stmt.Stmt:
         _expr = self.expression()
         self._consume(TokenType.SEMICOLON, "Expect ';' after expression.")
         return stmt.ExpressionStmt(_expr)
@@ -209,20 +231,22 @@ def parse_cmd(content: str) -> None:
         print(AstPrinter().print(expression))
 
 
-def parse(content: str) -> tuple[list[stmt.Stmt[str]], list[str]]:
+def parse(content: str) -> tuple[list[stmt.Stmt | None], list[str]]:
     """Parse the contents."""
     sc = scanner.Scanner(content)
     tokens = sc.scan_tokens()
-    parser = Parser[str](tokens)
+    parser = Parser(tokens)
     statements = parser.parse()
     return statements, parser.parse_errors
 
 
-def parse_expression(content: str) -> tuple[expr.Expr[str] | None, list[str]]:
+def parse_expression(
+    content: str,
+) -> tuple[expr.Expr | None, list[str]]:
     """Parse the contents."""
     sc = scanner.Scanner(content)
     tokens = sc.scan_tokens()
-    parser = Parser[str](tokens)
+    parser = Parser(tokens)
     try:
         _expr = parser.expression()
     except Parser.ParseError:
