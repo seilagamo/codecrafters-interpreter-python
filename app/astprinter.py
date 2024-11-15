@@ -2,6 +2,8 @@
 Convert a tree to a string.
 """
 
+from typing import Any
+
 from gen import expr
 
 from .tokens import Token, TokenType
@@ -15,6 +17,9 @@ class AstPrinter(expr.Visitor):
     def print(self, _expr: expr.Expr) -> object:
         """Print"""
         return _expr.accept(self)
+
+    def visit_assign_expr(self, _expr: "expr.AssignExpr") -> Any:
+        pass
 
     def visit_binary_expr(self, _expr: expr.BinaryExpr) -> str:
         """Visit Binary Expression"""

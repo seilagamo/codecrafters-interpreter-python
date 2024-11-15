@@ -25,6 +25,7 @@ def main() -> None:
             ast = define_ast(
                 basename,
                 [
+                    "Assign   : Token name, Expr value",
                     "Binary   : Expr left, Token operator, Expr right",
                     "Grouping : Expr expression",
                     "Literal  : object value",
@@ -43,7 +44,7 @@ def main() -> None:
                 [
                     "Expression : Expr expression",
                     "Print      : Expr expression",
-                    "Var        : Token name, Expr initializer",
+                    "Var        : Token name, Expr|None initializer",
                 ],
             )
             path = Path(output_dir) / f"{basename.lower()}.py"
@@ -64,13 +65,13 @@ def define_ast(basename: str, types: list[str]) -> list[str]:
         "import abc\n",
         "from typing import Any\n",
         "\n",
-        "from app.tokens import Token\n",
+        "from app.tokens import Token\n\n",
     ]
 
     if basename == "Stmt":
-        ast.append("from .expr import Expr\n")
+        ast.append("from .expr import Expr\n\n")
 
-    ast.append("\n\n")
+    ast.append("\n")
 
     ast.extend(define_visitor(basename, types))
     ast.extend(
@@ -98,7 +99,7 @@ def define_ast(basename: str, types: list[str]) -> list[str]:
 def define_type(basename: str, classname: str, fieldlist: str) -> list[str]:
     """Define the types."""
     fieldnames = [
-        f"{field.split(" ")[1]}: {field.split(" ")[0]}"
+        f"{field.split(" ")[1]}: {" | ".join(field.split(" ")[0].split("|"))}"
         for field in fieldlist.split(", ")
     ]
     _type = [

@@ -41,7 +41,21 @@ class Parser:
 
     def expression(self) -> expr.Expr:
         """Parse an expression."""
-        return self._equality()
+        return self._assignment()
+
+    def _assignment(self) -> expr.Expr:
+        expression = self._equality()
+        if self._match(TokenType.EQUAL):
+            equals = self._previous()
+            value = self._assignment()
+
+            if isinstance(expression, expr.VariableExpr):
+                name = expr.VariableExpr(expression.name).name
+                return expr.AssignExpr(name, value)
+
+            self._error(equals, "Invalid assignment target.")
+
+        return expression
 
     def _equality(self) -> expr.Expr:
         _expr = self._comparison()

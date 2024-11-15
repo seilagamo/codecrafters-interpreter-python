@@ -11,16 +11,23 @@ class Environment:
     """Environment."""
 
     def __init__(self) -> None:
-        self.values: dict[str, object] = {}
+        self._values: dict[str, object] = {}
 
     def define(self, name: str, value: object) -> None:
         """Define the value of a variable."""
-        self.values[name] = value
+        self._values[name] = value
 
     def get(self, name: Token) -> object:
         """Get the value of a variable."""
-        if name.lexeme not in self.values:
+        if name.lexeme not in self._values:
             raise InterpreterError(
                 name, "Undefined variable '" + name.lexeme + "'."
             )
-        return self.values.get(name.lexeme)
+        return self._values.get(name.lexeme)
+
+    def assign(self, name: Token, value: object) -> None:
+        """Assign the value of a variable."""
+        if name.lexeme in self._values:
+            self._values[name.lexeme] = value
+            return
+        raise InterpreterError(name, f"Undefined variable '{name.lexeme}'.")

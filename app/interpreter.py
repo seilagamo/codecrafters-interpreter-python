@@ -33,6 +33,11 @@ class Interpreter(expr.Visitor, stmt.Visitor):
         except InterpreterError as e:
             self.runtime_error(e)
 
+    def visit_assign_expr(self, _expr: "expr.AssignExpr") -> object:
+        value = self.evaluate(_expr.value)
+        self._environment.assign(_expr.name, value)
+        return value
+
     def visit_binary_expr(self, _expr: "expr.BinaryExpr") -> object:
         left = self.evaluate(_expr.left)
         right = self.evaluate(_expr.right)

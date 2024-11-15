@@ -15,6 +15,8 @@ class Visitor(metaclass=abc.ABCMeta):
         subclasses = (
             hasattr(subclass, "accept")
             and callable(subclass.accept)
+            and hasattr(subclass, "visit_assign_expr")
+            and callable(subclass.visit_assign_expr)
             and hasattr(subclass, "visit_binary_expr")
             and callable(subclass.visit_binary_expr)
             and hasattr(subclass, "visit_grouping_expr")
@@ -27,6 +29,11 @@ class Visitor(metaclass=abc.ABCMeta):
             and callable(subclass.visit_variable_expr)
         )
         return subclasses
+
+    @abc.abstractmethod
+    def visit_assign_expr(self, _expr: "AssignExpr") -> Any:
+        """Visitor visit_assign_expr."""
+        raise NotImplementedError
 
     @abc.abstractmethod
     def visit_binary_expr(self, _expr: "BinaryExpr") -> Any:
@@ -60,6 +67,17 @@ class Expr(abc.ABC):
     @abc.abstractmethod
     def accept(self, visitor: Visitor) -> Any:
         """Accept the node."""
+
+
+class AssignExpr(Expr):
+    """Class AssignExpr."""
+
+    def __init__(self, name: Token, value: Expr) -> None:
+        self.name = name
+        self.value = value
+
+    def accept(self, visitor: Visitor) -> Any:
+        return visitor.visit_assign_expr(self)
 
 
 class BinaryExpr(Expr):
