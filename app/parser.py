@@ -225,7 +225,7 @@ def parse_cmd(content: str) -> None:
     expression, parse_errors = parse_expression(content)
 
     if parse_errors:
-        _print_parse_errors(parse_errors)
+        print_parse_errors(parse_errors)
         sys.exit(65)
     if expression is not None:
         print(AstPrinter().print(expression))
@@ -254,7 +254,7 @@ def parse_expression(
     return _expr, parser.parse_errors
 
 
-def _print_parse_errors(errors: list[str]) -> None:
+def print_parse_errors(errors: list[str]) -> None:
     """Print a list of parse errors"""
     for error in errors:
         print(error, file=sys.stderr)

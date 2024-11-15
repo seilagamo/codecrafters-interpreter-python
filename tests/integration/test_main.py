@@ -189,6 +189,7 @@ def test_cli_run(
     if error_content:
         with pytest.raises(SystemExit) as pytest_wrapped_e:
             main.main()
+
         assert pytest_wrapped_e.type == SystemExit
         assert pytest_wrapped_e.value.code == 70
     else:

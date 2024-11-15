@@ -231,6 +231,7 @@ def _run(content: str) -> list[str]:
     """Interpret the content."""
     statements, parse_errors = parser.parse(content)
     if parse_errors:
+        parser.print_parse_errors(parse_errors)
         sys.exit(65)
     if statements:
         interpreter = Interpreter(statements)
