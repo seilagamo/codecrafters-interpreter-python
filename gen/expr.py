@@ -9,6 +9,8 @@ from app.tokens import Token
 class Visitor(metaclass=abc.ABCMeta):
     """Interface Visitor."""
 
+    # pylint: disable=R0801
+
     @classmethod
     def __subclasshook__(cls, subclass: Any) -> bool:
         """Check the subclasses."""

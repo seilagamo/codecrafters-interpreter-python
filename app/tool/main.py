@@ -42,6 +42,7 @@ def main() -> None:
             ast = define_ast(
                 basename,
                 [
+                    "Block      : list[Stmt|None] statements",
                     "Expression : Expr expression",
                     "Print      : Expr expression",
                     "Var        : Token name, Expr|None initializer",
@@ -78,7 +79,6 @@ def define_ast(basename: str, types: list[str]) -> list[str]:
         [
             f"class {basename}(abc.ABC):\n",
             f'    """Class {basename}."""\n',
-            "\n",
             "    @abc.abstractmethod\n",
             "    def accept(self, visitor: Visitor) -> Any:\n",
             '        """Accept the node."""\n',
@@ -133,7 +133,9 @@ def define_visitor(basename: str, types: list[str]) -> list[str]:
     # visitors
     methods: list[str] = [
         "class Visitor(metaclass=abc.ABCMeta):\n",
-        '    """Interface Visitor."""\n',
+        '    """Interface Visitor."""\n\n',
+        "     # pylint: disable=R0801",
+        "\n",
         "\n",
         "    @classmethod\n",
         "    def __subclasshook__(cls, subclass: Any) -> bool:\n",

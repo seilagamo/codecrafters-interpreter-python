@@ -118,6 +118,9 @@ class Interpreter(expr.Visitor, stmt.Visitor):
     def visit_variable_expr(self, _expr: "expr.VariableExpr") -> object:
         return self._environment.get(_expr.name)
 
+    def visit_block_stmt(self, _stmt: "stmt.BlockStmt") -> None:
+        self._execute_block(_stmt.statements, Environment(self._environment))
+
     def visit_expression_stmt(self, _stmt: "stmt.ExpressionStmt") -> None:
         self.evaluate(_stmt.expression)
 
@@ -141,6 +144,18 @@ class Interpreter(expr.Visitor, stmt.Visitor):
 
     def _execute(self, _stmt: stmt.Stmt) -> None:
         _stmt.accept(self)
+
+    def _execute_block(
+        self, statements: list[stmt.Stmt | None], environment: Environment
+    ) -> None:
+        previous = self._environment
+        try:
+            self._environment = environment
+            for statement in statements:
+                if statement is not None:
+                    self._execute(statement)
+        finally:
+            self._environment = previous
 
 
 expr.Visitor.register(Interpreter)

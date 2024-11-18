@@ -11,12 +11,16 @@ from .expr import Expr
 class Visitor(metaclass=abc.ABCMeta):
     """Interface Visitor."""
 
+    # pylint: disable=R0801
+
     @classmethod
     def __subclasshook__(cls, subclass: Any) -> bool:
         """Check the subclasses."""
         subclasses = (
             hasattr(subclass, "accept")
             and callable(subclass.accept)
+            and hasattr(subclass, "visit_block_stmt")
+            and callable(subclass.visit_block_stmt)
             and hasattr(subclass, "visit_expression_stmt")
             and callable(subclass.visit_expression_stmt)
             and hasattr(subclass, "visit_print_stmt")
@@ -25,6 +29,11 @@ class Visitor(metaclass=abc.ABCMeta):
             and callable(subclass.visit_var_stmt)
         )
         return subclasses
+
+    @abc.abstractmethod
+    def visit_block_stmt(self, _stmt: "BlockStmt") -> Any:
+        """Visitor visit_block_stmt."""
+        raise NotImplementedError
 
     @abc.abstractmethod
     def visit_expression_stmt(self, _stmt: "ExpressionStmt") -> Any:
@@ -48,6 +57,16 @@ class Stmt(abc.ABC):
     @abc.abstractmethod
     def accept(self, visitor: Visitor) -> Any:
         """Accept the node."""
+
+
+class BlockStmt(Stmt):
+    """Class BlockStmt."""
+
+    def __init__(self, statements: list[Stmt | None]) -> None:
+        self.statements = statements
+
+    def accept(self, visitor: Visitor) -> Any:
+        return visitor.visit_block_stmt(self)
 
 
 class ExpressionStmt(Stmt):

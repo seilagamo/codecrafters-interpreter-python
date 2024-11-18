@@ -168,7 +168,9 @@ class Parser:
 
     def _report_error(self, token: Token, message: str) -> None:
         if token.type == TokenType.EOF:
-            self.parse_errors.append(f"[line {token.line}] Error: {message}")
+            self.parse_errors.append(
+                f"[line {token.line}] Error at end: {message}"
+            )
         else:
             self.parse_errors.append(
                 f"[line {token.line}] Error at '{token.lexeme}': {message}"
@@ -205,19 +207,19 @@ class Parser:
             self._synchronize()
             return None
 
-    def _var_declaration(self) -> stmt.Stmt:
-        name = self._consume(TokenType.IDENTIFIER, "Expect variable name.")
-        initializer = None
-        if self._match(TokenType.EQUAL):
-            initializer = self.expression()
-        self._consume(
-            TokenType.SEMICOLON, "Expect ';' after variable declaration."
-        )
-        return stmt.VarStmt(name, initializer)
+    def _block(self) -> list[stmt.Stmt | None]:
+        statements: list[stmt.Stmt | None] = []
+        while not self._check(TokenType.RIGHT_BRACE) and not self._is_at_end():
+            statements.append(self._declaration())
+
+        self._consume(TokenType.RIGHT_BRACE, "Expect '}'.")
+        return statements
 
     def _statement(self) -> stmt.Stmt:
         if self._match(TokenType.PRINT):
             return self._print_statement()
+        if self._match(TokenType.LEFT_BRACE):
+            return stmt.BlockStmt(self._block())
 
         return self._expression_statement()
 
@@ -230,6 +232,16 @@ class Parser:
         _expr = self.expression()
         self._consume(TokenType.SEMICOLON, "Expect ';' after expression.")
         return stmt.ExpressionStmt(_expr)
+
+    def _var_declaration(self) -> stmt.Stmt:
+        name = self._consume(TokenType.IDENTIFIER, "Expect variable name.")
+        initializer = None
+        if self._match(TokenType.EQUAL):
+            initializer = self.expression()
+        self._consume(
+            TokenType.SEMICOLON, "Expect ';' after variable declaration."
+        )
+        return stmt.VarStmt(name, initializer)
 
 
 def parse_cmd(content: str) -> None:

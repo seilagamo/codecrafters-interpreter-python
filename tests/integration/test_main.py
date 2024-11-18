@@ -9,11 +9,13 @@ from app import main
 
 from . import DATA_FOLDER
 
+DATA_FOLDER_CLI_TESTS = DATA_FOLDER / "cli"
+
 
 def list_test_files(subfolder: str) -> list[tuple[str, str, str]]:
     """Build the list of files to test."""
     test_files: list[tuple[str, str, str]] = []
-    for file in os.listdir(DATA_FOLDER / subfolder):
+    for file in os.listdir(DATA_FOLDER_CLI_TESTS / subfolder):
         if file.endswith(".lox"):
             test_files.append(
                 (
@@ -34,24 +36,20 @@ def test_cli_tokenize(
     capsys: pytest.CaptureFixture,
 ) -> None:
     """Test the tokenize command."""
-    monkeypatch.setattr(
-        "sys.argv", ["", "tokenize", str(DATA_FOLDER / "tokenize" / lox)]
-    )
+    command = "tokenize"
+    folder_tests = DATA_FOLDER_CLI_TESTS / command
+    monkeypatch.setattr("sys.argv", ["", command, str(folder_tests / lox)])
 
     output_content = ""
     try:
-        with open(
-            str(DATA_FOLDER / "tokenize" / output), encoding="utf-8"
-        ) as file:
+        with open(str(folder_tests / output), encoding="utf-8") as file:
             output_content = file.read()
     except FileNotFoundError:
         pass
 
     error_content = ""
     try:
-        with open(
-            str(DATA_FOLDER / "tokenize" / error), encoding="utf-8"
-        ) as file:
+        with open(str(folder_tests / error), encoding="utf-8") as file:
             error_content = file.read()
     except FileNotFoundError:
         pass
@@ -80,22 +78,20 @@ def test_cli_parse(
     capsys: pytest.CaptureFixture,
 ) -> None:
     """Test the parse command."""
-    monkeypatch.setattr(
-        "sys.argv", ["", "parse", str(DATA_FOLDER / "parse" / lox)]
-    )
+    command = "parse"
+    folder_tests = DATA_FOLDER_CLI_TESTS / command
+    monkeypatch.setattr("sys.argv", ["", command, str(folder_tests / lox)])
 
     output_content = ""
     try:
-        with open(
-            str(DATA_FOLDER / "parse" / output), encoding="utf-8"
-        ) as file:
+        with open(str(folder_tests / output), encoding="utf-8") as file:
             output_content = file.read()
     except FileNotFoundError:
         pass
 
     error_content = ""
     try:
-        with open(str(DATA_FOLDER / "parse" / error), encoding="utf-8") as file:
+        with open(str(folder_tests / error), encoding="utf-8") as file:
             error_content = file.read()
     except FileNotFoundError:
         pass
@@ -124,24 +120,20 @@ def test_cli_evaluate(
     capsys: pytest.CaptureFixture,
 ) -> None:
     """Test the evaluate command."""
-    monkeypatch.setattr(
-        "sys.argv", ["", "evaluate", str(DATA_FOLDER / "evaluate" / lox)]
-    )
+    command = "evaluate"
+    folder_tests = DATA_FOLDER_CLI_TESTS / command
+    monkeypatch.setattr("sys.argv", ["", command, str(folder_tests / lox)])
 
     output_content = ""
     try:
-        with open(
-            str(DATA_FOLDER / "evaluate" / output), encoding="utf-8"
-        ) as file:
+        with open(str(folder_tests / output), encoding="utf-8") as file:
             output_content = file.read()
     except FileNotFoundError:
         pass
 
     error_content = ""
     try:
-        with open(
-            str(DATA_FOLDER / "evaluate" / error), encoding="utf-8"
-        ) as file:
+        with open(str(folder_tests / error), encoding="utf-8") as file:
             error_content = file.read()
     except FileNotFoundError:
         pass
@@ -170,18 +162,20 @@ def test_cli_run(
     capsys: pytest.CaptureFixture,
 ) -> None:
     """Test the evaluate command."""
-    monkeypatch.setattr("sys.argv", ["", "run", str(DATA_FOLDER / "run" / lox)])
+    command = "run"
+    folder_tests = DATA_FOLDER_CLI_TESTS / command
+    monkeypatch.setattr("sys.argv", ["", command, str(folder_tests / lox)])
 
     output_content = ""
     try:
-        with open(str(DATA_FOLDER / "run" / output), encoding="utf-8") as file:
+        with open(str(folder_tests / output), encoding="utf-8") as file:
             output_content = file.read()
     except FileNotFoundError:
         pass
 
     error_content = ""
     try:
-        with open(str(DATA_FOLDER / "run" / error), encoding="utf-8") as file:
+        with open(str(folder_tests / error), encoding="utf-8") as file:
             error_content = file.read()
     except FileNotFoundError:
         pass
@@ -189,9 +183,7 @@ def test_cli_run(
     if error_content:
         with pytest.raises(SystemExit) as pytest_wrapped_e:
             main.main()
-
         assert pytest_wrapped_e.type == SystemExit
-        assert pytest_wrapped_e.value.code == 70
     else:
         main.main()
 
@@ -200,3 +192,9 @@ def test_cli_run(
     stderr = captured.err
     assert stdout == output_content
     assert stderr == error_content
+    if error_content and error_content.startswith("[line"):
+        # It's a parse error.
+        assert pytest_wrapped_e.value.code == 65
+    elif error_content and not error_content.startswith("[line"):
+        # It's a runtime error.
+        assert pytest_wrapped_e.value.code == 70
